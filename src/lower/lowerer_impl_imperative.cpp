@@ -482,7 +482,7 @@ Stmt LowererImplImperative::lowerAssignment(Assignment assignment)
                                      atomicParallelUnit);
 
           std::vector<Property> properties = op.getProperties();
-          computeStmt = Block::make(assign, emitEarlyExit(var, properties));
+          computeStmt = Block::make(assign, emitEarlyExit(var, assignment));
         }
       }
     }
@@ -539,7 +539,7 @@ Stmt LowererImplImperative::lowerAssignment(Assignment assignment)
                                     atomicParallelUnit);
 
           std::vector<Property> properties = op.getProperties();
-          computeStmt = Block::make(computeStmt, emitEarlyExit(Load::make(values, loc), properties));
+          computeStmt = Block::make(computeStmt, emitEarlyExit(Load::make(values, loc), assignment));
         }
       }
       taco_iassert(computeStmt.defined());
@@ -2881,13 +2881,17 @@ bool LowererImplImperative::generateComputeCode() const {
   return this->compute;
 }
 
-Stmt LowererImplImperative::emitEarlyExit(Expr reductionExpr, std::vector<Property>& properties) {
-  if (loopOrderAllowsShortCircuit && findProperty<Annihilator>(properties).defined()) {
-    Literal annh = findProperty<Annihilator>(properties).annihilator();
-    Expr isAnnihilator = ir::Eq::make(reductionExpr, lower(annh));
-    return IfThenElse::make(isAnnihilator, Block::make(Break::make()));
-  }
-  return Stmt();
+Stmt LowererImplImperative::emitEarlyExit(Expr reductionExpr, Assignment assignment) {
+    Call op = to<Call>(assignment.getOperator());
+    std::vector<Property> properties = op.getProperties();
+
+    if (loopOrderAllowsShortCircuit && findProperty<Annihilator>(properties).defined()) {
+        Literal annh = findProperty<Annihilator>(properties).annihilator();
+        auto annhExpr = lower(annh);
+        Expr isAnnihilator = assignment.getExitCondition()(reductionExpr, lower(annh));
+        return IfThenElse::make(isAnnihilator, Block::make(Break::make()));
+    }
+    return Stmt();
 }
 
 Expr LowererImplImperative::getTensorVar(TensorVar tensorVar) const {

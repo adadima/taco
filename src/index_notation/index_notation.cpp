@@ -2050,14 +2050,15 @@ std::ostream& operator<<(std::ostream& os, const IndexStmt& expr) {
 Assignment::Assignment(const AssignmentNode* n) : IndexStmt(n) {
 }
 
-Assignment::Assignment(Access lhs, IndexExpr rhs, IndexExpr op)
-    : Assignment(new AssignmentNode(lhs, rhs, op)) {
+Assignment::Assignment(Access lhs, IndexExpr rhs, IndexExpr op, ir::Expr (*stop_condition) (ir::Expr, ir::Expr))
+    : Assignment(new AssignmentNode(lhs, rhs, op, stop_condition)) {
 }
 
 Assignment::Assignment(TensorVar tensor, vector<IndexVar> indices,
                        IndexExpr rhs, IndexExpr op,
-                       const std::map<int, std::shared_ptr<IndexVarIterationModifier>>& modifiers)
-    : Assignment(Access(tensor, indices, modifiers), rhs, op) {
+                       const std::map<int, std::shared_ptr<IndexVarIterationModifier>>& modifiers,
+                       ir::Expr (*stop_condition) (ir::Expr, ir::Expr))
+    : Assignment(Access(tensor, indices, modifiers), rhs, op, stop_condition) {
 }
 
 Access Assignment::getLhs() const {
@@ -2093,7 +2094,11 @@ std::vector<IndexVar> Assignment::getReductionVars() const {
   return reductionVars;
 }
 
-template <> bool isa<Assignment>(IndexStmt s) {
+CondFunc Assignment::getExitCondition() const {
+    return getNode(*this)->exitCondition;
+}
+
+    template <> bool isa<Assignment>(IndexStmt s) {
   return isa<AssignmentNode>(s.ptr);
 }
 

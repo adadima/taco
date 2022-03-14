@@ -109,6 +109,8 @@ set(TACO_TOOLS_DIR   ${TACO_PROJECT_DIR}/tools)
 set(TACO_INCLUDE_DIR ${TACO_PROJECT_DIR}/include)
 
 enable_testing()
+#add_compile_options(-fsanitize=address,undefined)
+#add_link_options(-fsanitize=address,undefined)
 include_directories(${TACO_INCLUDE_DIR})
 
 set(TACO_LIBRARY_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})

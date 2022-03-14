@@ -454,7 +454,7 @@ protected:
   std::vector<Iterator> getModeIterators(const std::vector<Iterator>&);
 
   /// Emit early exit
-  ir::Stmt emitEarlyExit(ir::Expr reductionExpr, std::vector<Property>&);
+  ir::Stmt emitEarlyExit(ir::Expr reductionExpr, Assignment assignment);
 
   /// Expression that returns the beginning of a window to iterate over
   /// in a compressed iterator. It is used when operating over windows of

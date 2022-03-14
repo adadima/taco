@@ -24,6 +24,7 @@
 #include "taco/ir_tags.h"
 #include "taco/index_notation/provenance_graph.h"
 #include "taco/index_notation/properties.h"
+#include "taco/lower/lower.h"
 
 namespace taco {
 
@@ -777,14 +778,15 @@ public:
 
   /// Create an assignment. Can specify an optional operator `op` that turns the
   /// assignment into a compound assignment, e.g. `+=`.
-  Assignment(Access lhs, IndexExpr rhs, IndexExpr op = IndexExpr());
+  Assignment(Access lhs, IndexExpr rhs, IndexExpr op = IndexExpr(), ir::Expr (*stop_condition) (ir::Expr, ir::Expr) = nullptr);
 
   /// Create an assignment. Can specify an optional operator `op` that turns the
   /// assignment into a compound assignment, e.g. `+=`. Additionally, specify
   /// any modifers on reduction index variables (windows, index sets, etc.).
   Assignment(TensorVar tensor, std::vector<IndexVar> indices, IndexExpr rhs,
              IndexExpr op = IndexExpr(),
-             const std::map<int, std::shared_ptr<IndexVarIterationModifier>>& modifiers = {});
+             const std::map<int, std::shared_ptr<IndexVarIterationModifier>>& modifiers = {},
+             ir::Expr (*stop_condition) (ir::Expr, ir::Expr) = nullptr);
 
   /// Return the assignment's left-hand side.
   Access getLhs() const;
@@ -795,6 +797,9 @@ public:
   /// Return the assignment compound operator (e.g., `+=`) or an undefined
   /// expression if the assignment is not compound (`=`).
   IndexExpr getOperator() const;
+
+  typedef ir::Expr (*CondFunc) (ir::Expr, ir::Expr);
+  CondFunc getExitCondition() const;
 
   /// Return the free index variables in the assignment, which are those used to
   /// access the left-hand side.

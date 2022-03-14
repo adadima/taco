@@ -371,10 +371,20 @@ struct IndexVarNode::Content {
   std::string name;
 };
 
+typedef ir::Expr (*CondFunc) (ir::Expr, ir::Expr);
+
 // Index Statements
 struct AssignmentNode : public IndexStmtNode {
-  AssignmentNode(const Access& lhs, const IndexExpr& rhs, const IndexExpr& op)
-      : lhs(lhs), rhs(rhs), op(op) {}
+  AssignmentNode(const Access& lhs, const IndexExpr& rhs, const IndexExpr& op, CondFunc exitCondition_ = nullptr)
+      : lhs(lhs), rhs(rhs), op(op) {
+        if (exitCondition_ != nullptr) {
+            exitCondition = exitCondition_;
+        } else {
+            exitCondition = [](ir::Expr red, ir::Expr annh) -> ir::Expr {
+                return ir::Eq::make(red, annh);
+            };
+        }
+  }
 
   void accept(IndexStmtVisitorStrict* v) const {
     v->visit(this);
@@ -383,6 +393,7 @@ struct AssignmentNode : public IndexStmtNode {
   Access    lhs;
   IndexExpr rhs;
   IndexExpr op;
+  CondFunc exitCondition;
 };
 
 struct YieldNode : public IndexStmtNode {

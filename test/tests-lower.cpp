@@ -1688,6 +1688,28 @@ Func scOr("Or", OrImpl(), {Annihilator((double)1), Identity(Literal((double)0))}
 Func scAnd("And", AndImpl(), {Annihilator((double)0), Identity((double)1)});
 Func bfsMaskOp("bfsMask", BfsLower(), BfsMaskAlg());
 
+CondFunc customExitCond = [](ir::Expr red, ir::Expr annh) {
+    return ir::Neq::make(red, ir::Literal::zero(Float32));
+};
+
+TEST_STMT(CustomEarlyExit,
+          forall(i,
+                 forall(j,
+                    Assignment(a(i), B(i, j) * 1, scOr(), customExitCond)
+                 )),
+          Values(Formats({
+                            {a, Format({dense})},
+                            {B, Format({dense, sparse})}
+          }
+          )),
+          {
+            TestCase(
+              {{B, {{{0, 1}, 1.0}, {{0, 3}, 1.0}}}},
+              {{a, {{{0}, 1.0}}}}
+              )
+          }
+);
+
 TEST_STMT(BoolRing,
           forall(i,
                  forall(j,
